@@ -1,4 +1,4 @@
-import argparse, json, random
+import argparse, json, random, os
 
 random.seed(1)
 ANIME = "anime.json" # list of possible anime
@@ -11,21 +11,34 @@ def write_json(fname: str, data) -> None:
 
 def load_json(fname: str):
     """ Loads data from a json file. """
-    with open(fname) as f:
-        return json.load(f)
+    if os.path.exists(fname):
+        with open(fname) as f:
+            return json.load(f)
+    # generate data from RAM to save write cycles / be more efficient 
+    # separate function from its arguments to avoid calling each function 
+    funcs = {
+        ANIME: (gen_list, (17526,)),
+        USER: (gen_user, (128, "uniform")),
+    }
+    f, args = funcs[fname]
+    return f(*args)
 
-def gen_list(args) -> None:
+def gen_list(n: int) -> list:
     """ Generate a list of possible anime. """
-    digits = len(str(args.length))
-    write_json(ANIME, list(f"anime{str(i).rjust(digits, '0')}"
-                           for i in range(args.length)))
+    return list(f"anime{str(i).rjust(len(str(n)), '0')}" for i in range(n))
 
-def gen_user(args) -> None:
+def write_list(args) -> None:
+    """ Write the list of anime to a file. """
+    write_json(ANIME, gen_list(args))
+
+def gen_user(n: int, dist: str) -> dict:
     """ Generate a user's list. """
     # dictionary of name to score
-    user_list = {name: sample(args.distribution)
-                 for name in random.sample(load_json(ANIME), args.length)}
-    write_json(USER, user_list)
+    return {name: sample(dist) for name in random.sample(load_json(ANIME), n)}
+
+def write_user(args) -> None:
+    """ Write the user's list to a file. """
+    write_json(USER, gen_user(args))
 
 ### probability distributions
 
@@ -52,7 +65,7 @@ if __name__ == "__main__":
     anime = subparsers.add_parser("anime", help="generates the possible anime")
     anime.add_argument("-l", "--length", type=int, default=17526,
                        help="number of possible anime")
-    anime.set_defaults(func=gen_list)
+    anime.set_defaults(func=write_list)
 
     user = subparsers.add_parser("user", help="generate a sample list")
     user.add_argument("-l", "--length", type=int, default=128,
@@ -62,7 +75,7 @@ if __name__ == "__main__":
                       help="distribution from which to sample scores")
     user.add_argument("-s", "--seed", type=int, default=1,
                       help="set the random seed")
-    user.set_defaults(func=gen_user)
+    user.set_defaults(func=write_user)
 
     args = parser.parse_args()
 

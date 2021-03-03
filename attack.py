@@ -54,15 +54,16 @@ def traverse(tree: list, n: int=1, l: list=[]) -> list:
         traverse(tree, (n << 1) | 1)
         return l
 
-anime = shuffle(load_json(ANIME), SHUFFLE)
-tree = make_tree(anime)
-# we can skip large queries if we assume the node will be explored anyways
-# if we skip too much it will use extraneous queries but it's useful early on 
-# use -1 to disable skipping and (len(tree) - 1).bit_length() - 1 for naive 
-DEPTH = 7
-user_list = traverse(tree)
-print(f"part 1: determining private list\n{'-'*10}")
-print(check({name: 1 for name in user_list}))
-
 ### part 2: determine the score of each anime
+
+if __name__ == "__main__":
+    anime = shuffle(load_json(ANIME), SHUFFLE)
+    tree = make_tree(anime)
+    # we can skip large queries if we assume the node will be explored anyways
+    # skip too much and it will use unecessary queries but it's useful early on
+    # use -1 to disable skipping and (len(tree) - 1).bit_length() - 1 for naive 
+    DEPTH = 7
+    user_list = traverse(tree)
+    print(f"part 1: determining private list\n{'-'*10}")
+    print(check({name: 1 for name in user_list}))
 
