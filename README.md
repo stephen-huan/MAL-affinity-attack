@@ -8,13 +8,13 @@ The answer is an emphatic yes. The anime in a private list can be determined
 in **40,125.764** API calls (for a list of size 128, averaged over 10^3 random
 lists), and at worst 52,576 API calls for a list of any size.
 
-### Determining List Contents
+## Determining List Contents
 
 Suppose we have a set of _N_ possible anime (the universe of all
 possible anime) and _M_ anime in the private list. We show how
 to efficiently determine which anime are in the private list.
 
-#### Naive Algorithm
+### Naive Algorithm
 
 Suppose we want to know whether anime _i_ is in the private list. We can simply
 add _i_ to our (initially empty) list and then check how many anime are shared.
@@ -28,7 +28,7 @@ which is certainly reasonable to brute force.
 
 However, for very large _N_ we will consider an alternative approach.
 
-#### Binary Tree Algorithm
+### Binary Tree Algorithm
 
 Construct an arbitrary binary tree on the possible anime, balanced
 such that the depth is _O(log N)_. We start at the root node. When
@@ -47,7 +47,7 @@ are _log N_ depths, so there are _N log N_ anime in queries total). This is
 again impractical if _N_ is large, so we can consider sorting by the most
 popular anime to maximize the probability that we hit the private anime.
 
-##### Query-size Tradeoff
+#### Query-size Tradeoff
 
 A trick to optimize the size of the queries is to skip checking early nodes.
 Since early nodes are highly likely to contain at least one anime, we can skip
@@ -106,7 +106,7 @@ eventually removed, barring the last addition; they have symmetry) and that the
 number of additions (and the number of removals) will be less than the total
 size for depths less than 14 because of the aforementioned DFS behavior.
 
-##### Closing Notes
+#### Closing Notes
 
 We are also able to upload XML files instead of adding/removing anime,
 essentially doing a single query in one batch. Since we can edit the XML
@@ -118,12 +118,12 @@ added/removed individually can be determined by timing the operations.
 
 In conclusion, the binary tree algorithm provides an efficient way to determine
 the contents of a private list by providing a framework to trade-off between
-the number of queries and the size of the queries. If the number of total anime
-is large and the size of the private list relatively small, then minimizing
-queries should be the priority. If the size of the private list is relatively
-large, then minimizing the size of the queries is the major concern. Finally,
+the number of queries and their sizes. If the total number of anime is large
+and the size of the private list relatively small, then minimizing queries
+should be the priority. If the size of the private list is relatively large,
+then minimizing the size of the queries is the major concern. Finally,
 uploading XML provides an efficient mechanism for doing large queries, which
 again puts a focus on minimizing queries.
 
-### Determining Scores
+## Determining Scores
 
