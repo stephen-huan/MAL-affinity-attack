@@ -29,7 +29,7 @@ def gen_list(n: int) -> list:
 
 def write_list(args) -> None:
     """ Write the list of anime to a file. """
-    write_json(ANIME, gen_list(args))
+    write_json(ANIME, gen_list(args.length))
 
 def gen_user(n: int, dist: str) -> dict:
     """ Generate a user's list. """
@@ -38,7 +38,7 @@ def gen_user(n: int, dist: str) -> dict:
 
 def write_user(args) -> None:
     """ Write the user's list to a file. """
-    write_json(USER, gen_user(args))
+    write_json(USER, gen_user(args.length, args.distribution))
 
 ### probability distributions
 

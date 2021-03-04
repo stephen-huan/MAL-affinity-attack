@@ -16,15 +16,22 @@ def scaled(u: list) -> tuple:
     mean = sum(u)/len(u) if len(u) != 0 else 0
     return tuple(x - mean for x in u)
 
-log = []
+def is_valid(u: dict) -> None:
+    """ Checks whether the dictionary is a valid list. """
+    assert all(name in anime for name in u), "invalid anime names"
+    assert all(isinstance(x, int) and 0 <= x <= 10
+               for x in u.values()), "invalid scores"
 
 def shared_vector(u: dict, v: dict=private) -> tuple:
     """ Gets the shared score vectors between two dictionaries. """
     shared = list(set(u.keys()) & set(v.keys()))
     return shared, [u[name] for name in shared], [v[name] for name in shared]
 
+log = []
+
 def query(u: dict) -> tuple:
     """ Returns the number of shared anime and the Pearson's correlation. """
+    is_valid(u)
     # copy and record the query for later postprocessing
     # we could store counters to save memory but this is more compact
     log.append({**u})
@@ -34,7 +41,8 @@ def query(u: dict) -> tuple:
     up, vp = scaled(u_scores), scaled(p_scores)
     un, vn = norm(up), norm(vp)
     # if one vector is constant, the correlation is undefined
-    corr = dot(up, vp)/(un*vn) if un != 0 and vn != 0 else None
+    corr = round(100*dot(up, vp)/(un*vn), 1) if un != 0 and vn != 0 else None
+    # corr = dot(up, vp)/(un*vn) if un != 0 and vn != 0 else None
     return len(shared), corr if len(shared) >= MIN_SIZE else None
 
 def cost(u: dict, v: dict) -> tuple:
@@ -62,9 +70,7 @@ def identical(u: list, v: list) -> bool:
 
 def check(u: dict, time: bool=True) -> str:
     """ Checks whether the given list is close to the private list. """
-    assert all(name in anime for name in u), "invalid anime names"
-    assert all(isinstance(x, int) and 0 <= x <= 10
-               for x in u.values()), "invalid scores"
+    is_valid(u)
     out = []
     shared, u_scores, p_scores = shared_vector(u)
     out.append("anime identical" if len(u) == len(private) == len(shared) \

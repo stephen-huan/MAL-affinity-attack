@@ -5,8 +5,17 @@ computes similarity statistics between the private user and the current user
 (the number of shared anime and the Pearson's correlation between the lists).
 Can this information be abused to discover the contents of the private list?
 The answer is an emphatic yes. The anime in a private list can be determined
-in **40,125.764** API calls (for a list of size 128, averaged over 10^3 random
-lists), and at worst 52,576 API calls for a list of any size.
+in _O(M_ log _N)_ queries if _N_ is the number of anime in the entire database
+and _M_ is the size of the list, and at worst _O(N)_ API operations. Once the
+anime in a private list is determined, the scores the user rated each anime
+can be computed in exactly _M_ - 1 queries and _O(M)_ time. Thus, it is both
+computationally efficient and practical to determine the entirety of a private
+list with only publicly accessible information.
+
+Recommendations: Don't compute the number of shared anime or the
+affinity for users who make their lists private. When sharing aggregate
+user data for scientific purposes, consider looking into [differential
+privacy](https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf).
 
 ## Determining List Contents
 
@@ -39,12 +48,12 @@ node contains at least one anime in the private list, so we recur on
 its left and right children. Otherwise, the subtree can be pruned.
 
 We do exactly _M_ root to leaf paths, and we query each node along these
-paths so the total number of queries is the sum of the path lengths, _O(M
-log N)_. However, the _size_ of each query (how many anime we must add to
-the list) is at most _O(N log N)_ via a merge sort-like analysis (at each
+paths so the total number of queries is the sum of the path lengths, _O(M_
+log _N)_. However, the _size_ of each query (how many anime we must add to
+the list) is at most _O(N_ log _N)_ via a merge sort-like analysis (at each
 depth of the tree, the sum of the size of the queries add up to _N_, there
-are _log N_ depths, so there are _N log N_ anime in queries total). This is
-again impractical if _N_ is large, so we can consider sorting by the most
+are log _N_ depths, so there are _N_ log _N_ anime in queries total). This
+is again impractical if _N_ is large, so we can consider sorting by the most
 popular anime to maximize the probability that we hit the private anime.
 
 #### Query-size Tradeoff
@@ -62,17 +71,7 @@ querying each possible anime once, degenerating into the naive algorithm).
 
 For _N_ = 17526 and _M_ = 128, 
 
-depth  | \# of queries             | total size
------: | :------------------------ | :--------
-1-6    | worse than 7              | worse than 7
-  7    |  1854                     | 32729
-  8    |  1908                     | 25832
-  9    |  2194                     | 21932
- 10    |  2978                     | 19836
- 11    |  4770                     | 18694
- 12    |  8224                     | 18072
- 13    | 13028                     | 17726
- 14    | 17526                     | 17526
+![query_size_tradeoff.png](./images/query_size_tradeoff.png)
 
 Inspired by the above query/size trade-off, we consider trying to minimize the
 sum of the number of actions, assuming each action takes the same amount of
@@ -89,22 +88,20 @@ depth-first-search tree search which nicely minimizes the transition cost ---
 the algorithm will explore related queries so only the _difference_ in the
 lists will be counted as "transition time".
 
-depth  | operations
------: | :---------
-  7    | 51928 
-  8    | 45129 
-  9    | 41494 
- 10    | 40194 
- 11    | 40848
- 12    | 43724
- 13    | 48221 
- 14    | 52576 
+![api_calls.png](./images/api_calls.png)
 
 A depth of 10 is optimal in this case. Also note that the number of additions
 is nearly equal to the number of removals (since each thing added will be
 eventually removed, barring the last addition; they have symmetry) and that the
 number of additions (and the number of removals) will be less than the total
 size for depths less than 14 because of the aforementioned DFS behavior.
+
+### Empirical Results
+
+To determine the real-world average performance of the above algorithms,
+we generate 10^3 random lists taken from a database of 17,526 possible
+anime. The binary tree algorithm with a depth of 10 uses an average of
+**40,125.764** API calls, +/- 68.477 (standard deviation).
 
 #### Closing Notes
 
@@ -126,4 +123,33 @@ uploading XML provides an efficient mechanism for doing large queries, which
 again puts a focus on minimizing queries.
 
 ## Determining Scores
+
+## Appendix
+
+### Table 1: Query-Size Trade-off 
+
+depth  | \# of queries             | total size
+-----: | :------------------------ | :--------
+1-6    | worse than 7              | worse than 7
+  7    |  1854                     | 32729
+  8    |  1908                     | 25832
+  9    |  2194                     | 21932
+ 10    |  2978                     | 19836
+ 11    |  4770                     | 18694
+ 12    |  8224                     | 18072
+ 13    | 13028                     | 17726
+ 14    | 17526                     | 17526
+
+### Table 2: API Calls
+
+depth  | operations
+-----: | :---------
+  7    | 51928 
+  8    | 45129 
+  9    | 41494 
+ 10    | 40194 
+ 11    | 40848
+ 12    | 43724
+ 13    | 48221 
+ 14    | 52576 
 
