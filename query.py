@@ -22,7 +22,7 @@ def is_valid(u: dict) -> None:
     assert all(isinstance(x, int) and 0 <= x <= 10
                for x in u.values()), "invalid scores"
 
-def shared_vector(u: dict, v: dict=private) -> tuple:
+def shared_vector(u: dict, v: dict) -> tuple:
     """ Gets the shared score vectors between two dictionaries. """
     shared = list(set(u.keys()) & set(v.keys()))
     return shared, [u[name] for name in shared], [v[name] for name in shared]
@@ -36,7 +36,7 @@ def query(u: dict) -> tuple:
     # we could store counters to save memory but this is more compact
     log.append({**u})
     # calculate number of shared anime
-    shared, u_scores, p_scores = shared_vector(u)
+    shared, u_scores, p_scores = shared_vector(u, private)
     # calculate Pearson's correlation
     up, vp = scaled(u_scores), scaled(p_scores)
     un, vn = norm(up), norm(vp)
@@ -66,13 +66,13 @@ def identical(u: list, v: list) -> bool:
     b = v1 - a*u1
     f = lambda x: a*x + b
     # a < 0 is not allowed because it is detectable by the sign of Pearson's
-    return a >= 0 and list(map(f, u)) == list(v)
+    return a >= 0 and all(abs(f(x) - y) < 10**-3 for x, y in zip(u, v))
 
 def check(u: dict, time: bool=True) -> str:
     """ Checks whether the given list is close to the private list. """
     is_valid(u)
     out = []
-    shared, u_scores, p_scores = shared_vector(u)
+    shared, u_scores, p_scores = shared_vector(u, private)
     out.append("anime identical" if len(u) == len(private) == len(shared) \
           else "different anime")
     if u_scores == p_scores:
@@ -80,17 +80,19 @@ def check(u: dict, time: bool=True) -> str:
     elif identical(u_scores, p_scores):
         out.append("score functionally identical w.r.t. Pearson's correlation")
     else:
-        out.append("different scores")
+        acc = sum(x == y for x, y in zip(u_scores, p_scores))/len(u_scores)
+        avg = sum(abs(x - y) for x, y in zip(u_scores, p_scores))/len(u_scores)
+        out.append(f"accuracy {acc:.2%}, average score difference {avg:.3f}")
     n, size = len(log), sum(len(u) for u in log)
-    max_queries = max(len(u) for u in log)
+    max_queries = max(len(u) for u in log) if n > 0 else None
     # print simple statistics about the query size
     if not time:
         out.append(f"used {n} queries, avg {size/n:.3f} anime per query")
         out.append(f"total size {size}, largest query {max_queries}")
     # compute transition costs based on history
     else:
-        add, remove = map(sum, zip(*(cost(log[i], log[i + 1])
-                                     for i in range(n - 1))))
+        ops = map(sum, zip(*(cost(log[i], log[i + 1]) for i in range(n - 1))))
+        add, remove = list(ops) if n > 2 else (0, 0)
         out.append(f"used {n} queries, {add} additions, {remove} removals")
         out.append(f"total time cost: {n + add + remove}")
     return "\n".join(out)

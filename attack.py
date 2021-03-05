@@ -1,9 +1,15 @@
+import math
 from gen_test_data import load_json, write_json, ANIME
-from prob import best_depth, shuffle
+from prob import shuffle, pmfs
 from query import query, check
 
 SHUFFLE = True # randomize order 
 WRITE = False  # write list to file
+
+def to_list(names: list, scores: list=None) -> dict:
+    """ Creates a dictionary out of the names and scores lists. """
+    if scores is None: scores = [1]*len(names)
+    return dict(zip(names, scores))
 
 ### part 1: find the anime that is in the list
 
@@ -16,7 +22,7 @@ def make_tree(l: list) -> list:
 
 def empty(l: list) -> bool:
     """ Determines whether any of the anime in l are in the list. """
-    return len(l) == 0 or query({name: 1 for name in l})[0] == 0
+    return len(l) == 0 or query(to_list(l))[0] == 0
 
 def depth(n: int) -> int:
     """ Returns the depth of a node. """
@@ -57,15 +63,6 @@ def traverse(tree: list, n: int=1, l: list=[]) -> list:
 
 ### part 2: determine the score of each anime
 
-def quadratic(a: float, b: float, c: float) -> tuple:
-    """ Solves the quadratic ax^2 + bx + c = 0. """
-    disc = b*b - 4*a*c
-    if disc < 0:
-        return None, None
-    disc = disc**0.5/(2*a)
-    x1, x2 = -b/(2*a) + disc, -b/(2*a) - disc
-    return x1, x2
-
 def solve(b: list) -> list:
     """ Solves a matrix equation of the form:
     [ 1 -1  0  0 ...
@@ -80,28 +77,62 @@ def solve(b: list) -> list:
         suffix.append(suffix[-1] + v)
     return suffix[::-1]
 
-def recover_mean(u: list) -> list:
-    """ Try to undo the transformation f(u) = u - u_mean.
-    Since the function is not invertible, find u up to a constant vector.
-    Note: this function is unnecessary since each u' is its own u. """
-    # convert matrix with len(u) - 1 on the diagonal and -1 everywhere else 
-    return solve([u[i - 1] - u[i] for i in range(1, len(u))])
+def norm(l: list) -> list:
+    """ Normalize the list with a min of 0 and max of 1.
+    This representation is unique as it "fixes" a and b. """
+    # the difference in extrema determine a as changing a scales the range 
+    a = 1/(max(l) - min(l))
+    # pick b such that the minimum in l maps to 0
+    b = -a*min(l)
+    return list(map(lambda x: a*x + b, l))
 
-def plausible(u: list) -> list:
+def closest(u: list) -> list:
+    """ Finds the closest score vector to u. """
+    u = norm(u)
+    # minimum value set to 0 for convenience, add 1 later 
+    best, best_l = float("inf"), None
+    for mx in range(1, 10):
+        v = [round(mx*x) for x in u]
+        dist = sum((x - y)**2 for x, y in zip(u, norm(v)))
+        if dist < best and abs(dist - best) > 10**-4:
+            best, best_l = dist, v
+    return [x + 1 for x in best_l]
+
+def plausible(u: list, dist) -> list:
     """ Determine which scalings and transformations are reasonable. """
+    guess = closest(u)
+    values = sorted(set(guess))
+    # possible a and b's such that au + b is valid 
+    poss = [(a, b) for a in range(1, 10//values[-1] + 1)
+            for b in range(1 - a*values[0], 10 - a*values[-1] + 1)]
+    # perform maximum likelihood estimation to find a and b 
+    counts = [guess.count(i) for i in range(11)]
+    f = lambda x: math.log(pmfs[dist](x))
+    a, b = max(poss, key=lambda p:
+               sum(counts[x]*f(p[0]*x + p[1]) for x in values))
+    return list(map(lambda x: a*x + b, guess))
 
-def compute_scores(user_list: list) -> dict:
+def compute_scores(names: list, dist: str="mal") -> dict:
     """ Compute the scores for anime in the list with repeated queries. """
+    # an empty list or a list with one element is technically a constant list  
+    if len(names) <= 1:
+        return to_list(names)
     # mean and how far to deviate from the mean
-    m, mu, delta = len(user_list), 5, 1
+    m, mu, delta = len(names), 5, 1
     v, b = [mu]*m, []
+    q = to_list(names, v)
     for i in range(m - 1):
         # simultaneously set the new values while resetting past values 
         v[i - 1], v[i], v[i + 1] = mu, mu + delta, mu - delta
-        b.append(query(dict(zip(user_list, v)))[1])
-    u = solve(b)
+        q[names[i - 1]], q[names[i]], q[names[i + 1]] = v[i - 1], v[i], v[i + 1]
+        corr = query(q)[1]
+        # other list must be constant, so return constant list
+        if corr is None:
+            return to_list(names)
+        b.append(corr)
     # u is of the form ax + b, where x is the ground truth and a > 0
-    return dict(zip(user_list, u))
+    u = plausible(solve(b), dist)
+    return to_list(names, u)
 
 if __name__ == "__main__":
     print(f"part 1: determining which anime are in the private list\n{'-'*10}")
@@ -111,12 +142,12 @@ if __name__ == "__main__":
     # skip too much and it'll use unnecessary queries but it's useful early on
     # use -1 to disable skipping and (len(tree) - 1).bit_length() - 1 for naive 
     DEPTH = 7
-    user_list = traverse(tree)
-    print(check({name: 1 for name in user_list}))
+    names = traverse(tree)
+    print(check(to_list(names)))
 
     print(f"\npart 2: computing scores\n{'-'*10}")
-    user_scores = compute_scores(user_list)
-    print(check(user_scores))
+    user_list = compute_scores(names)
+    print(check(user_list))
     print("\nprivate list reverse engineered!\nsaving as private-list.json...")
-    if WRITE: write_json("private-list.json", user_scores)
+    if WRITE: write_json("private-list.json", user_list)
 

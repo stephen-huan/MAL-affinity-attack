@@ -1,4 +1,5 @@
 import argparse, json, random, os
+from prob import MAL
 
 random.seed(1)
 ANIME = "anime.json" # list of possible anime
@@ -31,10 +32,11 @@ def write_list(args) -> None:
     """ Write the list of anime to a file. """
     write_json(ANIME, gen_list(args.length))
 
-def gen_user(n: int, dist: str) -> dict:
+def gen_user(n: int, dist: str, possible: list=None) -> dict:
     """ Generate a user's list. """
+    if possible is None: possible = load_json(ANIME)
     # dictionary of name to score
-    return {name: sample(dist) for name in random.sample(load_json(ANIME), n)}
+    return {name: sample(dist) for name in random.sample(possible, n)}
 
 def write_user(args) -> None:
     """ Write the user's list to a file. """
@@ -42,15 +44,15 @@ def write_user(args) -> None:
 
 ### probability distributions
 
-functions = [random.randrange, random.gauss]
-names = {
-    random.randrange: "uniform",
-    random.gauss: "normal",
+name_dist = {
+    "uniform": random.randrange,
+    "normal": random.gauss,
+    "mal": lambda pop, weights: random.choices(pop, weights, k=1)[0]
 }
-name_dist = {names.get(f, f.__name__): f for f in functions}
 params = {
     "uniform": (1, 11),
-    "normal": (5.5, 1.5)
+    "normal": (5.5, 1.5),
+    "mal": (range(1, 11), MAL)
 }
 
 def sample(name: str) -> float:

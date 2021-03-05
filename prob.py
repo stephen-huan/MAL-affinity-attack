@@ -20,6 +20,20 @@ import math, random
 random.seed(1)
 M = 128 # guess for the number of entries in the target list 
 
+#### distributions
+
+# MAL distribution: https://anime.plus/s/globals
+MAL = [101978, 122951, 193944, 319131, 590550,
+       853091, 1211949, 1024332, 530985, 281817]
+MAL = [p/sum(MAL) for p in MAL]
+
+mu, sigma, pi = 5.5, 1.5, math.pi
+pmfs = {
+    "uniform": lambda x: 1/10,
+    "normal": lambda x: math.exp(-1/2*((x - mu)/sigma)**2)/(sigma*(2*pi)**0.5),
+    "mal": lambda x: MAL[x - 1]
+}
+
 ### empirical methods
 
 def gen_binary_string(n: int, m: int=M) -> str:
