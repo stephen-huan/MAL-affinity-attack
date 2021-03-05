@@ -62,8 +62,8 @@ def sample(name: str) -> float:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Testing data generator.")
     parser.add_argument("-v", "--version", action="version", version="1.0")
-
     subparsers = parser.add_subparsers(title="commands")
+
     anime = subparsers.add_parser("anime", help="generates the possible anime")
     anime.add_argument("-l", "--length", type=int, default=17526,
                        help="number of possible anime")
