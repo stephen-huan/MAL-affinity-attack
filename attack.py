@@ -4,7 +4,7 @@ from prob import shuffle, pmfs
 from query import query, check
 
 SHUFFLE = True # randomize order 
-WRITE = False  # write list to file
+WRITE = True   # write list to file
 
 def to_list(names: list, scores: list=None) -> dict:
     """ Creates a dictionary out of the names and scores lists. """
@@ -134,6 +134,22 @@ def compute_scores(names: list, dist: str="mal") -> dict:
     u = plausible(solve(b), dist)
     return to_list(names, u)
 
+def batch_compute(names: list, dist: str="mal", batch_size: int=128) -> dict:
+    """ Split up a large list into batches to be used in compute_scores. """
+    n = len(names)
+    num_batches = math.ceil(n/batch_size)
+    size = n//num_batches
+    # spread the at most num_batches leftover elements over the first batches
+    loss = n - size*num_batches
+    scores, cur = [], 0
+    for i in range(num_batches):
+        cur_size = size + (i < loss)
+        anime = names[cur: cur + cur_size]
+        result = compute_scores(anime, dist)
+        scores += [result[name] for name in anime]
+        cur += cur_size
+    return to_list(names, scores)
+
 if __name__ == "__main__":
     print(f"part 1: determining which anime are in the private list\n{'-'*10}")
     anime = shuffle(load_json(ANIME), SHUFFLE)
@@ -146,7 +162,10 @@ if __name__ == "__main__":
     print(check(to_list(names)))
 
     print(f"\npart 2: computing scores\n{'-'*10}")
-    user_list = compute_scores(names)
+    # split list into batches to avoid precision loss (only given 3 digits)
+    # if too small, multiple solutions. if too large, not enough precision 
+    BATCH_SIZE = 128
+    user_list = batch_compute(names, batch_size=BATCH_SIZE)
     print(check(user_list))
     print("\nprivate list reverse engineered!\nsaving as private-list.json...")
     if WRITE: write_json("private-list.json", user_list)

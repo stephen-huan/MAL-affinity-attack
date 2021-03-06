@@ -80,7 +80,7 @@ _query-size trade-off_, where increasing depth will increase the number of
 queries, but will decrease the total size of the queries (at the extreme is
 querying each possible anime once, degenerating into the naive algorithm).
 
-For _N_ = 17526 and _M_ = 128, 
+For _N_ = 17,526 and _M_ = 128, 
 ![query_size_tradeoff.png](./images/query_size_tradeoff.png)
 
 _Figure 1_: Increasing depth exponentially decreases the
@@ -91,10 +91,10 @@ sum of the number of actions, assuming each action takes the same amount of
 time (as long as we have a framework, we can weight actions by their actual
 profiled times later). Our 3 actions are {check statistics, add anime to list,
 remove anime from list}. For the naive strategy of querying exactly one anime
-at a time to determine whether that anime is present in the other person's list
-or not, on each query it must remove the previous anime, add in the new anime,
-and check the stats page. This is 3 actions for _N_ queries, so 3*17526 = 52578
-for the current size of the MAL database. 
+at a time to determine whether that anime is present in the other person's
+list or not, on each query it must remove the previous anime, add in the new
+anime, and check the stats page. This is 3 actions for _N_ queries, so 3*17,526
+= 52,578 for the current size of the MAL database.
 
 Would a depth of 10 beat this number? Note that our algorithm is written as a
 depth-first-search tree search which nicely minimizes the transition cost ---
@@ -114,9 +114,9 @@ size for depths less than 14 because of the aforementioned DFS behavior.
 ### Empirical Results
 
 To determine the real-world average performance of the above algorithms,
-we generate 10^3 random lists taken from a database of 17,526 possible
-anime. The binary tree algorithm with a depth of 10 uses an average of
-**40127.2** API calls, +/- 67.362 (standard deviation).
+we generate 10^3 random lists of size 128 taken from a database of 17,526
+possible anime. The binary tree algorithm with a depth of 10 uses an average
+of **40,127.2** API calls, +/- 67.362 (standard deviation).
 
 #### Closing Notes
 
@@ -142,11 +142,16 @@ again puts a focus on minimizing queries.
 See the following [LaTeX report]() for the technical details of the algorithm. 
 A high-level summary is as follows:
 
-blue - identical, orange - correlation identical                                 | green - percent correct, red - average difference
+blue - identical, orange - correlation identical                                 | green - % correct, red - average difference
 :------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------:
 ![score_normal.png](./images/score_normal.png)                                   | ![score_normal_nomle.png](./images/score_normal-nomle.png)
 ![score_uniform.png](./images/score_uniform.png)                                 | ![score_mal.png](./images/score_mal.png)
+
 _Figures 3--6_: Score estimation performance on various distributions. MLE is used unless otherwise indicated.
+
+![score_mal-batch.png](./images/score_mal-batch.png)
+
+_Figure 7_: Batch algorithm performance.
 
 ## Appendix
 
@@ -306,4 +311,36 @@ _M_    | exactly correct           | mathematically correct | percent correct | 
  700   | 0.333                     | 0.333                  |  94.5           | 0.055
  800   | 0.240                     | 0.240                  |  89.6           | 0.104
  900   | 0.227                     | 0.227                  |  90.8           | 0.092
+
+#### _Table 7_: MAL distribution with batching
+
+_M_    | exactly correct           | mathematically correct | percent correct | average error
+-----: | :------------------------ | :--------------------- | :-------------- | :------------
+   1   | 0.020                     | 1.000                  | 100.0           | 0.000
+   2   | 0.091                     | 1.000                  | 100.0           | 0.000
+   3   | 0.251                     | 1.000                  | 100.0           | 0.000
+   4   | 0.371                     | 1.000                  | 100.0           | 0.000
+   5   | 0.460                     | 1.000                  | 100.0           | 0.000
+   6   | 0.521                     | 1.000                  | 100.0           | 0.000
+   7   | 0.573                     | 1.000                  | 100.0           | 0.000
+   8   | 0.614                     | 1.000                  | 100.0           | 0.000
+   9   | 0.644                     | 1.000                  | 100.0           | 0.000
+  10   | 0.675                     | 1.000                  | 100.0           | 0.000
+  20   | 0.856                     | 1.000                  | 100.0           | 0.000
+  30   | 0.934                     | 1.000                  | 100.0           | 0.000
+  40   | 0.968                     | 1.000                  | 100.0           | 0.000
+  50   | 0.984                     | 1.000                  | 100.0           | 0.000
+  60   | 0.992                     | 1.000                  | 100.0           | 0.000
+  70   | 0.996                     | 1.000                  | 100.0           | 0.000
+  80   | 0.998                     | 1.000                  | 100.0           | 0.000
+  90   | 0.999                     | 1.000                  | 100.0           | 0.000
+ 100   | 1.000                     | 1.000                  | 100.0           | 0.000
+ 200   | 1.000                     | 1.000                  | 100.0           | 0.000
+ 300   | 1.000                     | 1.000                  | 100.0           | 0.000
+ 400   | 1.000                     | 1.000                  | 100.0           | 0.000
+ 500   | 1.000                     | 1.000                  | 100.0           | 0.000
+ 600   | 1.000                     | 1.000                  | 100.0           | 0.000
+ 700   | 1.000                     | 1.000                  | 100.0           | 0.000
+ 800   | 1.000                     | 1.000                  | 100.0           | 0.000
+ 900   | 1.000                     | 1.000                  | 100.0           | 0.000
 
