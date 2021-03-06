@@ -45,6 +45,10 @@ def query(u: dict) -> tuple:
     # corr = dot(up, vp)/(un*vn) if un != 0 and vn != 0 else None
     return len(shared), corr if len(shared) >= MIN_SIZE else None
 
+def mean() -> float:
+    """ Returns the mean of the private list to two decimal places. """
+    return round(sum(private.values())/len(private), 2)
+
 def cost(u: dict, v: dict) -> tuple:
     """ Return the number of additions and removals to go from u to v. """
     u, v = set(u.keys()), set(v.keys())

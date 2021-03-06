@@ -15,6 +15,7 @@ def trial(n: int=17526, m: int=128, dist: str="uniform",
     query.anime = set(anime)
     # randomize the user's list
     query.private = gen_user(m, dist, anime)
+    attack.MEAN = round(sum(query.private.values())/len(query.private), 2)
     tree = make_tree(anime)
     attack.DEPTH = depth
     user_list = {name: 1 for name in traverse(tree)}
@@ -27,6 +28,7 @@ def score_trial(m, dist: str, given_dist: str) -> tuple:
     # size of the database doesn't matter
     query.anime = gen_list(m)
     query.private = gen_user(m, dist, query.anime)
+    attack.MEAN = round(sum(query.private.values())/len(query.private), 2)
     names = list(query.private.keys())
     user_list = attack.compute_scores(names, given_dist)
     t = query.check(user_list).splitlines()[1]

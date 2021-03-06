@@ -1,14 +1,16 @@
 import math
 from gen_test_data import load_json, write_json, ANIME
 from prob import shuffle, pmfs
-from query import query, check
+from query import query, check, mean
 
 SHUFFLE = True # randomize order 
 WRITE = True   # write list to file
+MEAN = mean()  # list average
 
 def to_list(names: list, scores: list=None) -> dict:
     """ Creates a dictionary out of the names and scores lists. """
-    if scores is None: scores = [1]*len(names)
+    # change round(MEAN) to 1 to not use the given mean
+    if scores is None: scores = [round(MEAN)]*len(names)
     return dict(zip(names, scores))
 
 ### part 1: find the anime that is in the list
@@ -98,21 +100,26 @@ def closest(u: list) -> list:
             best, best_l = dist, v
     return [x + 1 for x in best_l]
 
-def plausible(u: list, dist) -> list:
+def plausible(u: list, dist: str) -> list:
     """ Determine which scalings and transformations are reasonable. """
     guess = closest(u)
     values = sorted(set(guess))
     # possible a and b's such that au + b is valid 
     poss = [(a, b) for a in range(1, 10//values[-1] + 1)
             for b in range(1 - a*values[0], 10 - a*values[-1] + 1)]
+    # pick a and b to get the closest to the mean
+    if dist == "mean":
+        u_mu = sum(guess)/len(guess)
+        a, b = min(poss, key=lambda p: abs(p[0]*u_mu + p[1] - MEAN))
     # perform maximum likelihood estimation to find a and b 
-    counts = [guess.count(i) for i in range(11)]
-    f = lambda x: math.log(pmfs[dist](x))
-    a, b = max(poss, key=lambda p:
-               sum(counts[x]*f(p[0]*x + p[1]) for x in values))
+    else:
+        counts = [guess.count(i) for i in range(11)]
+        f = lambda x: math.log(pmfs[dist](x))
+        a, b = max(poss, key=lambda p:
+                sum(counts[x]*f(p[0]*x + p[1]) for x in values))
     return list(map(lambda x: a*x + b, guess))
 
-def compute_scores(names: list, dist: str="mal") -> dict:
+def compute_scores(names: list, dist: str="mean") -> dict:
     """ Compute the scores for anime in the list with repeated queries. """
     # an empty list or a list with one element is technically a constant list  
     if len(names) <= 1:
@@ -134,7 +141,7 @@ def compute_scores(names: list, dist: str="mal") -> dict:
     u = plausible(solve(b), dist)
     return to_list(names, u)
 
-def batch_compute(names: list, dist: str="mal", batch_size: int=128) -> dict:
+def batch_compute(names: list, dist: str="mean", batch_size: int=128) -> dict:
     """ Split up a large list into batches to be used in compute_scores. """
     n = len(names)
     num_batches = math.ceil(n/batch_size)

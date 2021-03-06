@@ -21,12 +21,33 @@ privacy](https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf).
 - [`query.py`](./query.py): responds to queries posed by `attack.py`.
 - [`gen_test_data.py`](./gen_test_data.py): generates the
 database of possible anime and the particular private list.
-- [`stats.py`](./stats.py): computes the expected performance of the attack 
 
 Helper files:
-- [`archive.py`](./archive.py): unused code
-- [`kmeans.py`](./kmeans.py): 1D _k_-means implementation
+- [`stats.py`](./stats.py): computes the expected performance of the attack 
 - [`prob.py`](./prob.py): helper library for probabilistic analysis 
+
+## Introduction
+
+[MyAnimeList](https://myanimelist.net/) ("MAL") is a popular website for
+keeping track of the anime one has watched. Lists are public by default, for
+example, my list is available [here](https://myanimelist.net/profile/vazae)
+and anyone can see what anime I've watched and what I've scored
+them. Users can choose to make their lists private, for example this
+[user](https://myanimelist.net/profile/affinity-oracle). Despite the
+list being private, I can still view the number of shared anime and the
+affinity compared to my list. 
+
+This paper demonstrates efficient ways to take
+advantage of that statistical information.
+
+Challenge: I've taken a string and encoded it into
+numbers between 1 and 10 in the following manner:
+```python
+f = lambda s: "".join(str(ord(ch) - 96).rjust(2, "0").replace("0", "10") for ch in s)
+```
+If you know each of the scores for the user `affinity-oracle`, simply go
+through the anime in alphabetical order and concatenate their scores to
+form a string, then reverse the above transformation for an secret message.
 
 ## Determining List Contents
 
@@ -81,7 +102,7 @@ queries, but will decrease the total size of the queries (at the extreme is
 querying each possible anime once, degenerating into the naive algorithm).
 
 For _N_ = 17,526 and _M_ = 128, 
-![query_size_tradeoff.png](./images/query_size_tradeoff.png)
+![query_size_tradeoff.png](./images/graphs/query_size_tradeoff.png)
 
 _Figure 1_: Increasing depth exponentially decreases the
 number of queries while increasing the total query sizes.
@@ -101,7 +122,7 @@ depth-first-search tree search which nicely minimizes the transition cost ---
 the algorithm will explore related queries so only the _difference_ in the
 lists will be counted as "transition time".
 
-![api_calls.png](./images/api_calls.png)
+![api_calls.png](./images/graphs/api_calls.png)
 
 _Figure 2_: There exists a global minimum because the cost function is convex.
 
@@ -142,16 +163,13 @@ again puts a focus on minimizing queries.
 See the following [LaTeX report]() for the technical details of the algorithm. 
 A high-level summary is as follows:
 
-blue - identical, orange - correlation identical                                 | green - % correct, red - average difference
-:------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------:
-![score_normal.png](./images/score_normal.png)                                   | ![score_normal_nomle.png](./images/score_normal-nomle.png)
-![score_uniform.png](./images/score_uniform.png)                                 | ![score_mal.png](./images/score_mal.png)
+![score_mal-mean.png](./images/graphs/score_mal-mean.png)
 
-_Figures 3--6_: Score estimation performance on various distributions. MLE is used unless otherwise indicated.
+_Figure 3_: Score estimation performance on the MAL distribution. 
 
-![score_mal-batch.png](./images/score_mal-batch.png)
+![score_mal-mean-batch.png](./images/graphs/score_mal-mean-batch.png)
 
-_Figure 7_: Batch algorithm performance.
+_Figure 4_: Score estimation performance on the MAL distribution. 
 
 ## Appendix
 
@@ -182,165 +200,35 @@ depth  | operations
  13    | 48221 
  14    | 52576 
 
-### _Tables 3--6_: Score Estimation Performance on Various Distributions
+### _Table 3_: Score Estimation Performance on MAL's Global Distribution 
 
-#### _Table 3_: Normal distribution (without maximum likelihood estimation)
-
-_M_    | exactly correct           | mathematically correct | percent correct | average error
------: | :------------------------ | :--------------------- | :-------------- | :------------
-   1   | 0.004                     | 1.000                  | 100.0           | 0.000
-   2   | 0.000                     | 1.000                  | 100.0           | 0.000
-   3   | 0.007                     | 1.000                  | 100.0           | 0.000
-   4   | 0.013                     | 1.000                  | 100.0           | 0.000
-   5   | 0.017                     | 1.000                  | 100.0           | 0.000
-   6   | 0.022                     | 1.000                  | 100.0           | 0.000
-   7   | 0.026                     | 1.000                  | 100.0           | 0.000
-   8   | 0.030                     | 1.000                  | 100.0           | 0.000
-   9   | 0.034                     | 1.000                  | 100.0           | 0.000
-  10   | 0.038                     | 1.000                  | 100.0           | 0.000
-  20   | 0.074                     | 1.000                  | 100.0           | 0.000
-  30   | 0.108                     | 1.000                  | 100.0           | 0.000
-  40   | 0.145                     | 1.000                  | 100.0           | 0.000
-  50   | 0.185                     | 1.000                  | 100.0           | 0.000
-  60   | 0.200                     | 1.000                  | 100.0           | 0.000
-  70   | 0.238                     | 1.000                  | 100.0           | 0.000
-  80   | 0.253                     | 1.000                  | 100.0           | 0.000
-  90   | 0.280                     | 1.000                  | 100.0           | 0.000
- 100   | 0.299                     | 1.000                  | 100.0           | 0.000
- 200   | 0.523                     | 1.000                  | 100.0           | 0.000
- 300   | 0.620                     | 1.000                  | 100.0           | 0.000
- 400   | 0.694                     | 0.986                  | 100.0           | 0.000
- 500   | 0.720                     | 0.920                  |  98.7           | 0.013
- 600   | 0.865                     | 0.946                  |  99.2           | 0.008
- 700   | 0.733                     | 0.800                  |  89.1           | 0.109
- 800   | 0.600                     | 0.600                  |  97.8           | 0.022
- 900   | 0.682                     | 0.682                  |  97.7           | 0.023
-
-#### _Table 4_: Normal distribution (with MLE)
-
-_M_    | exactly correct           | mathematically correct | percent correct | average error
------: | :------------------------ | :--------------------- | :-------------- | :-----------
-   1   | 0.004                     | 1.000                  | 100.0           | 0.000
-   2   | 0.124                     | 1.000                  | 100.0           | 0.000
-   3   | 0.288                     | 1.000                  | 100.0           | 0.000
-   4   | 0.408                     | 1.000                  | 100.0           | 0.000
-   5   | 0.495                     | 1.000                  | 100.0           | 0.000
-   6   | 0.557                     | 1.000                  | 100.0           | 0.000
-   7   | 0.603                     | 1.000                  | 100.0           | 0.000
-   8   | 0.640                     | 1.000                  | 100.0           | 0.000
-   9   | 0.673                     | 1.000                  | 100.0           | 0.000
-  10   | 0.697                     | 1.000                  | 100.0           | 0.000
-  20   | 0.861                     | 1.000                  | 100.0           | 0.000
-  30   | 0.930                     | 1.000                  | 100.0           | 0.000
-  40   | 0.964                     | 1.000                  | 100.0           | 0.000
-  50   | 0.979                     | 1.000                  | 100.0           | 0.000
-  60   | 0.989                     | 1.000                  | 100.0           | 0.000
-  70   | 0.995                     | 1.000                  | 100.0           | 0.000
-  80   | 0.996                     | 1.000                  | 100.0           | 0.000
-  90   | 1.000                     | 1.000                  | 100.0           | 0.000
- 100   | 0.999                     | 1.000                  | 100.0           | 0.000
- 200   | 1.000                     | 1.000                  | 100.0           | 0.000
- 300   | 1.000                     | 1.000                  | 100.0           | 0.000
- 400   | 0.986                     | 0.986                  | 100.0           | 0.000
- 500   | 0.920                     | 0.920                  |  98.7           | 0.013
- 600   | 0.946                     | 0.946                  |  99.2           | 0.008
- 700   | 0.800                     | 0.800                  |  99.1           | 0.009
- 800   | 0.600                     | 0.600                  |  97.8           | 0.022
- 900   | 0.682                     | 0.682                  |  97.7           | 0.023
-
-#### _Table 5_: Uniform distribution
-
-_M_    | exactly correct           | mathematically correct | percent correct | average error
------: | :------------------------ | :--------------------- | :-------------- | :------------
-   1   | 0.101                     | 1.000                  | 100.0           | 0.000
-   2   | 0.030                     | 1.000                  | 100.0           | 0.000
-   3   | 0.170                     | 1.000                  | 100.0           | 0.000
-   4   | 0.290                     | 1.000                  | 100.0           | 0.000
-   5   | 0.379                     | 1.000                  | 100.0           | 0.000
-   6   | 0.454                     | 1.000                  | 100.0           | 0.000
-   7   | 0.513                     | 1.000                  | 100.0           | 0.000
-   8   | 0.567                     | 1.000                  | 100.0           | 0.000
-   9   | 0.610                     | 1.000                  | 100.0           | 0.000
-  10   | 0.650                     | 1.000                  | 100.0           | 0.000
-  20   | 0.878                     | 1.000                  | 100.0           | 0.000
-  30   | 0.958                     | 1.000                  | 100.0           | 0.000
-  40   | 0.986                     | 1.000                  | 100.0           | 0.000
-  50   | 0.996                     | 1.000                  | 100.0           | 0.000
-  60   | 0.997                     | 1.000                  | 100.0           | 0.000
-  70   | 0.999                     | 1.000                  | 100.0           | 0.000
-  80   | 1.000                     | 1.000                  | 100.0           | 0.000
-  90   | 1.000                     | 1.000                  | 100.0           | 0.000
- 100   | 1.000                     | 1.000                  | 100.0           | 0.000
- 200   | 0.973                     | 0.973                  |  99.8           | 0.002
- 300   | 0.744                     | 0.744                  |  98.4           | 0.016
- 400   | 0.431                     | 0.431                  |  93.8           | 0.062
- 500   | 0.320                     | 0.320                  |  92.8           | 0.072
- 600   | 0.270                     | 0.270                  |  85.1           | 0.149
- 700   | 0.067                     | 0.067                  |  76.4           | 0.237
- 800   | 0.080                     | 0.080                  |  72.8           | 0.278
- 900   | 0.136                     | 0.136                  |  69.3           | 0.318
-
-#### _Table 6_: MAL's global distribution
-
-_M_    | exactly correct           | mathematically correct | percent correct | average error
------: | :------------------------ | :--------------------- | :-------------- | :------------
-   1   | 0.020                     | 1.000                  | 100.0           | 0.000
-   2   | 0.091                     | 1.000                  | 100.0           | 0.000
-   3   | 0.251                     | 1.000                  | 100.0           | 0.000
-   4   | 0.371                     | 1.000                  | 100.0           | 0.000
-   5   | 0.460                     | 1.000                  | 100.0           | 0.000
-   6   | 0.521                     | 1.000                  | 100.0           | 0.000
-   7   | 0.573                     | 1.000                  | 100.0           | 0.000
-   8   | 0.614                     | 1.000                  | 100.0           | 0.000
-   9   | 0.644                     | 1.000                  | 100.0           | 0.000
-  10   | 0.673                     | 1.000                  | 100.0           | 0.000
-  20   | 0.854                     | 1.000                  | 100.0           | 0.000
-  30   | 0.932                     | 1.000                  | 100.0           | 0.000
-  40   | 0.967                     | 1.000                  | 100.0           | 0.000
-  50   | 0.984                     | 1.000                  | 100.0           | 0.000
-  60   | 0.993                     | 1.000                  | 100.0           | 0.000
-  70   | 0.996                     | 1.000                  | 100.0           | 0.000
-  80   | 0.998                     | 1.000                  | 100.0           | 0.000
-  90   | 0.998                     | 1.000                  | 100.0           | 0.000
- 100   | 1.000                     | 1.000                  | 100.0           | 0.000
- 200   | 1.000                     | 1.000                  | 100.0           | 0.000
- 300   | 0.967                     | 0.967                  | 100.0           | 0.000
- 400   | 0.875                     | 0.875                  |  99.8           | 0.002
- 500   | 0.700                     | 0.700                  |  98.1           | 0.019
- 600   | 0.622                     | 0.622                  |  95.5           | 0.045
- 700   | 0.333                     | 0.333                  |  94.5           | 0.055
- 800   | 0.240                     | 0.240                  |  89.6           | 0.104
- 900   | 0.227                     | 0.227                  |  90.8           | 0.092
-
-#### _Table 7_: MAL distribution with batching
-
-_M_    | exactly correct           | mathematically correct | percent correct | average error
------: | :------------------------ | :--------------------- | :-------------- | :------------
-   1   | 0.020                     | 1.000                  | 100.0           | 0.000
-   2   | 0.091                     | 1.000                  | 100.0           | 0.000
-   3   | 0.251                     | 1.000                  | 100.0           | 0.000
-   4   | 0.371                     | 1.000                  | 100.0           | 0.000
-   5   | 0.460                     | 1.000                  | 100.0           | 0.000
-   6   | 0.521                     | 1.000                  | 100.0           | 0.000
-   7   | 0.573                     | 1.000                  | 100.0           | 0.000
-   8   | 0.614                     | 1.000                  | 100.0           | 0.000
-   9   | 0.644                     | 1.000                  | 100.0           | 0.000
-  10   | 0.675                     | 1.000                  | 100.0           | 0.000
-  20   | 0.856                     | 1.000                  | 100.0           | 0.000
-  30   | 0.934                     | 1.000                  | 100.0           | 0.000
-  40   | 0.968                     | 1.000                  | 100.0           | 0.000
-  50   | 0.984                     | 1.000                  | 100.0           | 0.000
-  60   | 0.992                     | 1.000                  | 100.0           | 0.000
-  70   | 0.996                     | 1.000                  | 100.0           | 0.000
-  80   | 0.998                     | 1.000                  | 100.0           | 0.000
-  90   | 0.999                     | 1.000                  | 100.0           | 0.000
- 100   | 1.000                     | 1.000                  | 100.0           | 0.000
- 200   | 1.000                     | 1.000                  | 100.0           | 0.000
- 300   | 1.000                     | 1.000                  | 100.0           | 0.000
- 400   | 1.000                     | 1.000                  | 100.0           | 0.000
- 500   | 1.000                     | 1.000                  | 100.0           | 0.000
- 600   | 1.000                     | 1.000                  | 100.0           | 0.000
- 700   | 1.000                     | 1.000                  | 100.0           | 0.000
- 800   | 1.000                     | 1.000                  | 100.0           | 0.000
- 900   | 1.000                     | 1.000                  | 100.0           | 0.000
+_M_   | % identical | batched
+----: | :---------: | :-----:
+   1  | 1.000       | 1.000
+   2  | 0.643       | 0.643
+   3  | 0.869       | 0.869
+   4  | 0.954       | 0.954
+   5  | 0.985       | 0.985
+   6  | 0.993       | 0.993
+   7  | 0.997       | 0.997
+   8  | 0.999       | 0.999
+   9  | 1.000       | 1.000
+  10  | 1.000       | 1.000
+  20  | 1.000       | 1.000
+  30  | 1.000       | 1.000
+  40  | 1.000       | 1.000
+  50  | 1.000       | 1.000
+  60  | 1.000       | 1.000
+  70  | 1.000       | 1.000
+  80  | 1.000       | 1.000
+  90  | 1.000       | 1.000
+ 100  | 1.000       | 1.000
+ 200  | 1.000       | 1.000
+ 300  | 0.959       | 1.000
+ 400  | 0.903       | 1.000
+ 500  | 0.620       | 1.000
+ 600  | 0.432       | 1.000
+ 700  | 0.300       | 1.000
+ 800  | 0.240       | 1.000
+ 900  | 0.182       | 1.000
 
