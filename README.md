@@ -49,19 +49,6 @@ are still computed against the current user.
 This paper demonstrates efficient ways to take
 advantage of that statistical information.
 
-Challenge: I've taken a score list and encoded
-it into a string in the following manner:
-```python
-"".join(chr(10*l[i<<1] + l[i<<1 | 1] - 11) for i in range(len(l)>>1)).lower()
-```
-If you know each of the scores for the user `affinity-oracle`, simply go
-through the anime in alphabetical order and append their scores to form
-a list, then apply the above transformation to get a secret message*.
-
-*Please don't abuse the MAL API! This can be done by hand, and if you
-email me I'll provide the list of anime (the interesting part is the score
-determination, which takes far less steps than the anime determination).
-
 ## Part 1: Determining List Contents
 
 Suppose we have a set of _N_ possible anime (the universe of all
