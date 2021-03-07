@@ -1,6 +1,8 @@
 ## Determining Scores
 
-See the following [LaTeX report]() for the technical details of the algorithm. 
+See the following
+[LaTeX report](https://stephen-huan.github.io/assets/pdfs/cs-lectures/math/mal-affinity-attack/writeup.pdf)
+for the technical details of the algorithm. 
 A high-level summary is as follows:
 
 [_Pearson's
