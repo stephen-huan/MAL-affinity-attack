@@ -7,14 +7,13 @@ import attack, query
 
 random.seed(1)
 
-def trial(n: int=17526, m: int=128, dist: str="uniform",
-          depth: int=10, time: bool=True) -> int:
+def trial(n: int=17526, m: int=385, depth: int=11, time: bool=True) -> int:
     """ Determines the number of API calls for a random list. """
     # randomize possible anime
     anime = shuffle(gen_list(n))
     query.anime = set(anime)
-    # randomize the user's list
-    query.private = gen_user(m, dist, anime)
+    # randomize the user's list, distribution doesn't matter
+    query.private = gen_user(m, "uniform", anime)
     attack.MEAN = round(sum(query.private.values())/len(query.private), 2)
     tree = make_tree(anime)
     attack.DEPTH = depth
@@ -23,7 +22,7 @@ def trial(n: int=17526, m: int=128, dist: str="uniform",
     query.log = []
     return t
 
-def score_trial(m, dist: str, given_dist: str) -> tuple:
+def score_trial(m: int, dist: str, given_dist: str) -> tuple:
     """ Determines the behavior of the score inference algorithm. """
     # size of the database doesn't matter
     query.anime = gen_list(m)
@@ -45,7 +44,8 @@ def score_trial(m, dist: str, given_dist: str) -> tuple:
 
 def query_performance(args):
     """ Determine the average number of API calls for part 1. """
-    data = [int(trial()[-1].split(":")[-1]) for i in range(args.number)]
+    iters, n, m, depth = args.number, args.total, args.size, args.depth
+    data = [int(trial(n, m, depth)[-1].split(":")[-1]) for i in range(iters)]
     print(f"mean: {statistics.mean(data)}, std: {statistics.stdev(data)}")
 
 def score_performance(args):
@@ -92,7 +92,7 @@ def graph_data(args):
 
     # query-size trade-off
     if args.name == "query":
-        x = range(7, 15)
+        x = range(9, 15)
         y = [trial(depth=d, time=False) for d in x]
         y = [(int(lines[-2].split()[1]), int(lines[-1].split()[2][:-1]))
             for lines in y]
@@ -108,7 +108,7 @@ def graph_data(args):
         plt.show()
     # total number of operations
     elif args.name == "api":
-        x = range(7, 15)
+        x = range(9, 15)
         y = [int(trial(depth=d, time=True)[-1].split(":")[-1]) for d in x]
         plt.plot(x, y)
         plt.title("Number of API Calls vs. Depth")
@@ -143,6 +143,12 @@ if __name__ == "__main__":
     queries = subparsers.add_parser("query", help="query performance measures")
     queries.add_argument("-n", "--number", type=int, default=10**3,
                        help="number of trials")
+    queries.add_argument("-t", "--total", type=int, default=17526,
+                       help="size of database")
+    queries.add_argument("-s", "--size", type=int, default=385,
+                       help="size of private list")
+    queries.add_argument("-d", "--depth", type=int, default=11,
+                       help="depth")
     queries.set_defaults(func=query_performance)
 
     score = subparsers.add_parser("score", help="score performance measures")

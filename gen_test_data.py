@@ -19,7 +19,7 @@ def load_json(fname: str):
     # separate function from its arguments to avoid calling each function 
     funcs = {
         ANIME: (gen_list, (17526,)),
-        USER: (gen_user, (128, "uniform")),
+        USER: (gen_user, (385, "mal")),
     }
     f, args = funcs[fname]
     return f(*args)
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     anime.set_defaults(func=write_list)
 
     user = subparsers.add_parser("user", help="generate a sample list")
-    user.add_argument("-l", "--length", type=int, default=128,
+    user.add_argument("-l", "--length", type=int, default=385,
                       help="number of anime in the list")
     user.add_argument("-d", "--distribution", choices=name_dist.keys(),
                       default="uniform",

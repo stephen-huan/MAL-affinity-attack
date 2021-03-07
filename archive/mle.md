@@ -156,6 +156,9 @@ integer, so this must be an fraction with denominator 1--9. I guess it's unlikel
 for the mean to be very close to a fraction by accident? To be honest, I don't
 have much insight into why knowing the mean is such a strong forcing, but it
 works very well (which is why this section is relegated to the archive).
+- If we knew the mean _and_ the standard deviation, we would have a unique
+solution. The standard deviation uniquely determines _a_ and then ***b*** is
+determined by the mean: _a_ E[_X_] + ***b*** = mu, ***b*** = mu - _a_ E[_X_]
 - If we knew two distinct scores (e.g. through reviews, MAL will show what
 score a reviewer gave an anime) then we could solve for _a_ and ***b*** with
 a simple linear system: Suppose we know the scores ***u***1 and ***u***2 and
