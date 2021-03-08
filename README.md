@@ -189,9 +189,9 @@ and an affine transformation of **u** must be accounted for.
 As stated previously, we can only gain information about ***u*** through its
 correlation with some known vector ***v***. We carefully construct ***v***'s in
 such a way that it is computationally efficient to compute ***u***, generating
-a linear system with one free variable. This linear system has _M_ - 1 rows and
-we will therefore use exactly _M_ - 1 queries. Each query requires two anime
-to change scores, so the total number of API operations is exactly 2 _M_ - 2.
+a linear system with one free variable. This linear system has _M_ - 1 rows
+and we will therefore use exactly _M_ - 1 queries. Each query requires 3 anime
+to change scores, so the total number of API operations is exactly 3 _M_ - 3.
 We now need to determine the particular _a_ and ***b*** that transforms our
 computed ***u*** into the ground truth ***u*** (since our computed ***u*** may
 be a transformation of the real score list for the aforementioned reasons).
@@ -283,16 +283,16 @@ we know the list is constant we know each score by looking at the mean.
 
 The score estimation algorithm is much more practical than the anime
 determination algorithm. We can do score estimation in exactly _M_ - 1
-queries (with one batch) and each query is exactly two API operations to
-change the scores of two anime. For larger lists where batching applies,
+queries (with one batch) and each query is exactly three API operations to
+change the scores of three anime. For larger lists where batching applies,
 it actually uses less queries since we lose a query every batch, but adds
 additional overhead in adding the anime for the current batch and removing
 the anime from the previous batch. Each anime is added once and removed
 once, so this adds an upper bound of 2 _M_ API operations. Thus, the entire
-algorithm has a 4 _M_ API bound (2 _M_ change score operations, 2 _M_
+algorithm has a 5 _M_ API bound (3 _M_ change score operations, 2 _M_
 add/remove anime operations). This is linear with respect to the length of
 the private list, which is better than the anime determination algorithm
-if the size of the private list is reasonable (_M_ less than 3/4 _N_).
+if the size of the private list is reasonable (_M_ less than 3/5 _N_).
 
 ## Practical Considerations
 
@@ -331,16 +331,29 @@ If _N_ is the number of anime in the database and _M_ is the number of anime
 in the private list, we can determine the anime in a private list with _O(M_
 log _N)_ queries and at most 3 _N_ API operations. We can determine the score
 of each anime with high probability for lists of any, possibly unknown, score
-distribution and in at most _M - 1_ queries and 4 _M_ API operations. Thus,
-we can determine a private list entirely with at most **3 _N_ + 4 _M_**
-API operations. In the worst case when _M_ = _N_, this is 7 _N_ = ~120,000
+distribution and in at most _M - 1_ queries and 5 _M_ API operations. Thus,
+we can determine a private list entirely with at most **3 _N_ + 5 _M_**
+API operations. In the worst case when _M_ = _N_, this is 8 _N_ = ~140,000
 operations for the current size of the database. For the average case of _M_
 = 385, algorithmic improvements to both steps lower the number of operations
-to around **45,000**, about 5/6th of the 54,118 predicted by the upper bound.
+to around **45,000**, about 5/6th of the 54,503 predicted by the upper bound.
 Thus, we have shown it is realistic to determine the contents of a private
 list with only similarity statistics.
 
 ## Appendix
+
+**Challenge**: I've taken a score list and
+encoded it into a string in the following manner:
+```python
+"".join(chr(10*l[i<<1] + l[i<<1 | 1] - 11) for i in range(len(l)>>1)).lower()
+```
+If you know each of the scores for the user `affinity-oracle`, simply go
+through the anime in alphabetical order and append their scores to form
+a list, then apply the above transformation to get a secret message*.
+
+*Please don't abuse the MAL API! This can be done by hand, and if you
+email me I'll provide the list of anime (the interesting part is the score
+determination, which takes far less steps than the anime determination).
 
 ### _Table 1_: Query-Size Trade-off 
 
